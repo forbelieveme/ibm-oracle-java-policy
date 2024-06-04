@@ -7,5 +7,6 @@
 	<classpathentry kind="var" path="COMMON_CLASSES_HOME/IntegrationAPI.jar"/>
 	<classpathentry kind="con" path="com.ibm.etools.mft.uri.classpath.MBProjectReference"/>
 	<classpathentry kind="lib" path="Z:/Ripley/OracleJavaPolicy/OracleJavaPolicyTestJava/cysce/lib/ojdbc6.jar"/>
+	<classpathentry kind="lib" path="Z:/Ripley/OracleJavaPolicy/OracleJavaPolicyTestJava/cysce/lib/orai18n-19.3.0.0.jar"/>
 	<classpathentry kind="output" path=""/>
 </classpath>
