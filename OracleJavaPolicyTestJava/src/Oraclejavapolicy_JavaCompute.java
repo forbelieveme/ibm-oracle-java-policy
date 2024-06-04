@@ -1,8 +1,12 @@
 package src;
 
+import java.math.BigDecimal;
+import java.sql.Array;
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Struct;
 
 import com.ibm.broker.javacompute.MbJavaComputeNode;
 import com.ibm.broker.plugin.MbElement;
@@ -13,6 +17,10 @@ import com.ibm.broker.plugin.MbMessageAssembly;
 import com.ibm.broker.plugin.MbOutputTerminal;
 import com.ibm.broker.plugin.MbUserException;
 
+import oracle.jdbc.*;
+import oracle.sql.ARRAY;
+import oracle.sql.STRUCT;
+
 public class Oraclejavapolicy_JavaCompute extends MbJavaComputeNode {
 
 	public void evaluate(MbMessageAssembly inAssembly) throws MbException {
@@ -22,7 +30,14 @@ public class Oraclejavapolicy_JavaCompute extends MbJavaComputeNode {
 		MbMessage inMessage = inAssembly.getMessage();
 		MbMessageAssembly outAssembly = null;
 
+		CallableStatement callableStatement = null;
+		StringBuilder sbuf = new StringBuilder();
+
+		String sqlQuery = "{CALL GET_EMPLOYEES_BY_ID(?, ?, ?)}";
+
 		try {
+
+			// Class.forName("oracle.jdbc.driver.OracleDriver");
 			// optionally copy message headers
 			// create new message as a copy of the input
 			MbMessage outMessage = new MbMessage(inMessage);
@@ -35,14 +50,20 @@ public class Oraclejavapolicy_JavaCompute extends MbJavaComputeNode {
 			Connection connection = getJDBCType4Connection("{OracleJDBCPolicy}:OraclePolicy",
 					JDBC_TransactionType.MB_TRANSACTION_AUTO);
 
-			PreparedStatement selectStatement = null;
-			String statement = "SELECT EMPLOYEE_ID, FIRST_NAME FROM EMPLOYEES WHERE EMPLOYEE_ID = 1";
+			callableStatement = connection.prepareCall(sqlQuery);
 
-			selectStatement = connection.prepareStatement(statement);
+			// callableStatement.setLong(1, 1);
+			callableStatement.setNull(1, OracleTypes.NUMBER);
 
-			ResultSet resultSet = selectStatement.executeQuery();
+			callableStatement.registerOutParameter(2, OracleTypes.NUMBER);
+			callableStatement.registerOutParameter(3, OracleTypes.ARRAY, "EMP_ARRAY");
 
-			resultSet.next();
+			callableStatement.execute();
+
+			Long outEmpId = callableStatement.getLong(2);
+			Array empArray = (Array) callableStatement.getObject(3);
+
+			ResultSet arrayRs = empArray.getResultSet();
 
 			MbElement outRoot = outMessage.getRootElement();
 			MbElement outJsonRoot = outRoot.getLastChild();
@@ -53,10 +74,27 @@ public class Oraclejavapolicy_JavaCompute extends MbJavaComputeNode {
 
 			MbElement outJsonData = outJsonRoot.getFirstChild();
 			outJsonData.createElementAsLastChild(MbElement.TYPE_NAME, "employee_id",
-					resultSet.getInt(1));
+					outEmpId);
 
-			outJsonData.createElementAsLastChild(MbElement.TYPE_NAME, "first_name",
-					resultSet.getString(2));
+			int count = 0;
+			while (arrayRs.next()) {
+
+				sbuf.setLength(0);
+
+				Struct empStruct = (Struct) arrayRs.getObject(2);
+				Object[] attributes = empStruct.getAttributes();
+				Integer employeeId = ((BigDecimal) attributes[0]).intValue();
+				String firstName = (String) attributes[1];
+				String lastName = (String) attributes[2];
+				String fullName = firstName + " " + lastName;
+
+				sbuf.append(employeeId.toString() + ", ");
+				sbuf.append(fullName);
+
+				outJsonData.createElementAsLastChild(MbElement.TYPE_NAME, "first_name" + count,
+						sbuf.toString());
+				count++;
+			}
 
 			// End of user code
 			// ----------------------------------------------------------
