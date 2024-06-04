@@ -4,8 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import org.apache.xalan.lib.sql.SQLQueryParser;
-
 import com.ibm.broker.javacompute.MbJavaComputeNode;
 import com.ibm.broker.plugin.MbElement;
 import com.ibm.broker.plugin.MbException;
@@ -28,12 +26,13 @@ public class Oraclejavapolicy_JavaCompute extends MbJavaComputeNode {
 			// optionally copy message headers
 			// create new message as a copy of the input
 			MbMessage outMessage = new MbMessage(inMessage);
-			copyMessageHeaders(inMessage, outMessage);
+			outAssembly = new MbMessageAssembly(inAssembly, outMessage);
+
+			// copyMessageHeaders(inMessage, outMessage);
 			// ----------------------------------------------------------
 			// Add user code below
 
-			Connection connection = getJDBCType4Connection(
-					"{OracleJDBCPolicy}:OraclePolicy",
+			Connection connection = getJDBCType4Connection("{OracleJDBCPolicy}:OraclePolicy",
 					JDBC_TransactionType.MB_TRANSACTION_AUTO);
 
 			PreparedStatement selectStatement = null;
@@ -44,23 +43,21 @@ public class Oraclejavapolicy_JavaCompute extends MbJavaComputeNode {
 			ResultSet resultSet = selectStatement.executeQuery();
 
 			resultSet.next();
-
 			MbElement outRoot = outMessage.getRootElement();
 			// MbElement outJsonRoot = outRoot
 			// .createElementAsLastChild(MbJSON.PARSER_NAME);
 			// MbElement outJsonData = outJsonRoot.createElementAsLastChild(
 			// MbElement.TYPE_NAME, MbJSON.DATA_ELEMENT_NAME, null);
 			MbElement outJsonRoot = outRoot.getLastChild();
-			MbElement outJsonData2 = outJsonRoot
-					.getFirstElementByPath("/JSON/Data");
-			outJsonData2.createElementAsLastChild(MbElement.TYPE_NAME,
-					"message", "victoria");
+			MbElement outJsonData2 = outJsonRoot.getFirstElementByPath("/JSON/Data");
+			outJsonData2.createElementAsLastChild(MbElement.TYPE_NAME, "message",
+			"victoria");
 
-			MbElement outJsonHello = outJsonRoot
-					.getFirstElementByPath("/JSON/Data/hello");
+			MbElement outJsonHello = outJsonRoot.getFirstElementByPath("/JSON/Data/hello");
 			String hello = outJsonHello.getValue().toString();
 			outJsonHello.setValue("hello" + hello);
 			/*
+			 * 
 			 * MbElement test = outJsonData.getFirstChild();
 			 * outJsonData.addAsFirstChild(test);
 			 * 
@@ -75,7 +72,17 @@ public class Oraclejavapolicy_JavaCompute extends MbJavaComputeNode {
 			 * outJsonData.createElementAsLastChild(MbElement.TYPE_NAME_VALUE,
 			 * "first_name", resultSet.getString(2));
 			 */
-			outAssembly = new MbMessageAssembly(inAssembly, outMessage);
+
+			// MbElement outRoot = outMessage.getRootElement();
+			// MbElement outJsonRoot = outRoot.createElementAsLastChild(MbJSON.PARSER_NAME);
+			// MbElement outJsonData =
+			// outJsonRoot.createElementAsLastChild(MbElement.TYPE_NAME,
+			// MbJSON.DATA_ELEMENT_NAME,
+			// null);
+			// MbElement outJsonTest =
+			// outJsonData.createElementAsLastChild(MbElement.TYPE_NAME_VALUE, "Message",
+			// "Hello World");
+
 			// End of user code
 			// ----------------------------------------------------------
 		} catch (MbException e) {
