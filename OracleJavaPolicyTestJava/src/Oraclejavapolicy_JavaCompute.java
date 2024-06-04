@@ -43,10 +43,11 @@ public class Oraclejavapolicy_JavaCompute extends MbJavaComputeNode {
 			ResultSet resultSet = selectStatement.executeQuery();
 
 			resultSet.next();
+
 			MbElement outRoot = outMessage.getRootElement();
 			MbElement outJsonRoot = outRoot.getLastChild();
-			MbElement outJsonData2 = outJsonRoot.getFirstElementByPath("/JSON/Data");
-			outJsonData2.createElementAsLastChild(MbElement.TYPE_NAME, "message",
+			MbElement outJsonData = outJsonRoot.getFirstChild();
+			outJsonData.createElementAsLastChild(MbElement.TYPE_NAME, "message",
 			"victoria");
 
 			MbElement outJsonHello = outJsonRoot.getFirstElementByPath("/JSON/Data/hello");
